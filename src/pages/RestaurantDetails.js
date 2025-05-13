@@ -14,12 +14,10 @@ function RestaurantDetails({ restaurants }) {
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(decodedName));
     if (saved) {
-      console.log("✅ Found localStorage entry:", saved);
       setVisited(saved.visited ?? false);
       setMyRating(saved.myRating ?? "");
       setLog(saved.log ?? "");
     } else {
-      console.log("📭 No existing data for", decodedName);
     }
     setHasLoaded(true);
   }, [decodedName]);
@@ -31,10 +29,9 @@ function RestaurantDetails({ restaurants }) {
       myRating,
       log,
     };
-    console.log(`💾 Saving to localStorage for ${decodedName}`, saveData);
     localStorage.setItem(decodedName, JSON.stringify(saveData));
   }, [visited, myRating, log, decodedName, hasLoaded]);
-  
+
   if (!restaurant) {
     return <p>Restaurant not found.</p>;
   }
@@ -47,7 +44,7 @@ function RestaurantDetails({ restaurants }) {
       <p><strong>Rating:</strong> ⭐ {restaurant["Google Rating"]}</p>
 
       <img
-        src={"https://via.placeholder.com/500x300?text=" + encodeURIComponent(restaurant["Name"])}
+        src={restaurant["ImageURL"] || "https://via.placeholder.com/500x300?text=" + encodeURIComponent(restaurant["Name"])}
         alt={restaurant["Name"]}
         style={{ marginTop: "1rem", borderRadius: "8px", width: "100%" }}
       />
