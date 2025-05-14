@@ -14,7 +14,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    Papa.parse("/data/restaurants_with_images.csv", {
+    Papa.parse(`${process.env.PUBLIC_URL}/data/restaurants_with_images.csv`, {
       header: true,
       download: true,
       complete: (results) => {
@@ -89,7 +89,7 @@ function App() {
   }, [restaurants, sortKey, sortOrder, filter, visitedMap, searchTerm]);
 
   return (
-    <Router>
+    <Router basename="/San-Mateo-Eats">
       <Routes>
         <Route
           path="/"
