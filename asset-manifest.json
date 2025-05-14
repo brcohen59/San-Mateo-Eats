@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/San-Mateo-Eats/static/css/main.2bb7472e.css",
+    "main.js": "/San-Mateo-Eats/static/js/main.ac20c53c.js",
+    "static/js/453.51b78c38.chunk.js": "/San-Mateo-Eats/static/js/453.51b78c38.chunk.js",
+    "index.html": "/San-Mateo-Eats/index.html",
+    "main.2bb7472e.css.map": "/San-Mateo-Eats/static/css/main.2bb7472e.css.map",
+    "main.ac20c53c.js.map": "/San-Mateo-Eats/static/js/main.ac20c53c.js.map",
+    "453.51b78c38.chunk.js.map": "/San-Mateo-Eats/static/js/453.51b78c38.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2bb7472e.css",
+    "static/js/main.ac20c53c.js"
+  ]
+}
