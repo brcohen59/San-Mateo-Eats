@@ -1,5 +1,5 @@
 {
-  "name": "san-mateo-eats",
+  "name": "new-san-mateo-eats",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -7,9 +7,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.9.0",
-    "dotenv": "^16.5.0",
-    "fs": "^0.0.1-security",
     "papaparse": "^5.5.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -40,5 +37,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.27",
+    "tailwindcss": "^3.3.3"
   }
 }
