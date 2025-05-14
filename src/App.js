@@ -1,7 +1,8 @@
+// src/App.js
 import React, { useEffect, useState } from "react";
 import Papa from "papaparse";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import RestaurantDetails from "./pages/RestaurantDetails";
+import RestaurantDetails from "./pages/RestaurantDetails"; // Adjust path if needed
 
 function App() {
   const [restaurants, setRestaurants] = useState([]);
@@ -10,6 +11,7 @@ function App() {
   const [sortOrder, setSortOrder] = useState("asc");
   const [filter, setFilter] = useState("all"); // "all", "visited", "unvisited"
   const [visitedMap, setVisitedMap] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     Papa.parse("/data/restaurants_with_images.csv", {
@@ -33,7 +35,10 @@ function App() {
     setVisitedMap(map);
   }, [restaurants]);
 
-  const toggleVisited = (name) => {
+  const toggleVisited = (e, name) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const saved = JSON.parse(localStorage.getItem(name)) || {};
     const newVisited = !saved.visited;
     localStorage.setItem(name, JSON.stringify({ ...saved, visited: newVisited }));
@@ -44,9 +49,28 @@ function App() {
     }));
   };
 
-
   useEffect(() => {
-    const sorted = [...restaurants].sort((a, b) => {
+    let filtered = [...restaurants];
+    
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r => 
+        r["Name"]?.toLowerCase().includes(term) || 
+        r["Cuisine / Type"]?.toLowerCase().includes(term)
+      );
+    }
+    
+    // Apply visited filter
+    filtered = filtered.filter(r => {
+      const isVisited = visitedMap[r["Name"]];
+      if (filter === "visited") return isVisited;
+      if (filter === "unvisited") return !isVisited;
+      return true; // "all"
+    });
+    
+    // Apply sorting
+    filtered = filtered.sort((a, b) => {
       const valA = a[sortKey] || "";
       const valB = b[sortKey] || "";
 
@@ -61,8 +85,8 @@ function App() {
       }
     });
 
-    setSortedRestaurants(sorted);
-  }, [restaurants, sortKey, sortOrder]);
+    setSortedRestaurants(filtered);
+  }, [restaurants, sortKey, sortOrder, filter, visitedMap, searchTerm]);
 
   return (
     <Router>
@@ -70,81 +94,154 @@ function App() {
         <Route
           path="/"
           element={
-            <div style={{ padding: "2rem" }}>
-              <h1>San Mateo Eats</h1>
+            <div className="min-h-screen bg-gray-50">
+              {/* Header */}
+              <header className="bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-lg">
+                <div className="container mx-auto px-4 py-6">
+                  <h1 className="text-3xl font-bold">San Mateo Eats</h1>
+                  <p className="text-sm opacity-80">Discover and track local restaurants</p>
+                </div>
+              </header>
 
-              {/* Sort/Filter Controls */}
-              <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-                <label>
-                  Sort by:
-                  <select value={sortKey} onChange={(e) => setSortKey(e.target.value)} style={{ marginLeft: "0.5rem" }}>
-                    <option value="Name">Name</option>
-                    <option value="Cuisine / Type">Cuisine</option>
-                    <option value="Google Rating">Google Rating</option>
-                  </select>
-                </label>
-
-                <label>
-                  Order:
-                  <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={{ marginLeft: "0.5rem" }}>
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                  </select>
-                </label>
-
-                <label>
-                  Filter:
-                  <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ marginLeft: "0.5rem" }}>
-                    <option value="all">All</option>
-                    <option value="visited">Visited</option>
-                    <option value="unvisited">Unvisited</option>
-                  </select>
-                </label>
-              </div>
-
-              {/* Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
-                {sortedRestaurants
-                  .filter((r) => {
-                    const isVisited = visitedMap[r["Name"]];
-                    if (filter === "visited") return isVisited;
-                    if (filter === "unvisited") return !isVisited;
-                    return true; // "all"
-                  })
-                  .map((r, i) => {
-                  const visited = visitedMap[r["Name"]];
-                  return (
-                    <div key={i} style={{ border: "1px solid #ccc", borderRadius: "8px", padding: "1rem", position: "relative" }}>
-                      <Link to={`/restaurant/${encodeURIComponent(r["Name"])}`} style={{ textDecoration: "none", color: "inherit" }}>
-                        <img
-                          src={r["ImageURL"] || "https://via.placeholder.com/300x200?text=" + encodeURIComponent(r["Name"])}
-                          alt={r["Name"]}
-                          style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "4px" }}
+              <main className="container mx-auto px-4 py-8">
+                {/* Search and Controls */}
+                <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+                  <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+                    <div className="flex-grow">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search restaurants or cuisines..."
+                          className="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-500 transition"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <h2 style={{ margin: "0.5rem 0 0" }}>{r["Name"]}</h2>
-                        <p style={{ margin: "0.25rem 0" }}>{r["Cuisine / Type"]}</p>
-                        <p style={{ margin: "0.25rem 0" }}>⭐ {r["Google Rating"]}</p>
-                      </Link>
-
-                      <button
-                        onClick={() => toggleVisited(r["Name"])}
-                        style={{
-                          position: "absolute",
-                          top: "10px",
-                          right: "10px",
-                          background: "none",
-                          border: "none",
-                          fontSize: "1.5rem",
-                          cursor: "pointer",
-                        }}
-                        title={visited ? "Mark as unvisited" : "Mark as visited"}
-                      >
-                        {visited ? "✅" : "⬜"}
-                      </button>
+                        <span className="absolute right-3 top-3 text-gray-400">
+                          🔍
+                        </span>
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
+                    
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center">
+                        <label className="text-sm text-gray-700 mr-2">Sort by:</label>
+                        <select 
+                          value={sortKey} 
+                          onChange={(e) => setSortKey(e.target.value)}
+                          className="p-2 border border-gray-300 rounded-md text-gray-700 focus:ring-2 focus:ring-orange-300 focus:border-orange-500 bg-white"
+                        >
+                          <option value="Name">Name</option>
+                          <option value="Cuisine / Type">Cuisine</option>
+                          <option value="Google Rating">Rating</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center">
+                        <label className="text-sm text-gray-700 mr-2">Order:</label>
+                        <select 
+                          value={sortOrder} 
+                          onChange={(e) => setSortOrder(e.target.value)}
+                          className="p-2 border border-gray-300 rounded-md text-gray-700 focus:ring-2 focus:ring-orange-300 focus:border-orange-500 bg-white"
+                        >
+                          <option value="asc">Ascending</option>
+                          <option value="desc">Descending</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center">
+                        <label className="text-sm text-gray-700 mr-2">Show:</label>
+                        <select 
+                          value={filter} 
+                          onChange={(e) => setFilter(e.target.value)}
+                          className="p-2 border border-gray-300 rounded-md text-gray-700 focus:ring-2 focus:ring-orange-300 focus:border-orange-500 bg-white"
+                        >
+                          <option value="all">All</option>
+                          <option value="visited">Visited</option>
+                          <option value="unvisited">Not Visited</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-gray-500">
+                    Showing {sortedRestaurants.length} of {restaurants.length} restaurants
+                  </div>
+                </div>
+
+                {/* Restaurant Grid */}
+                {sortedRestaurants.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {sortedRestaurants.map((restaurant, index) => {
+                      const visited = visitedMap[restaurant["Name"]];
+                      
+                      return (
+                        <Link 
+                          to={`/restaurant/${encodeURIComponent(restaurant["Name"])}`}
+                          key={index}
+                          className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 transform hover:-translate-y-1"
+                        >
+                          {/* Restaurant Card */}
+                          <div className="relative h-48 overflow-hidden">
+                            <img
+                              src={restaurant["ImageURL"] || "https://via.placeholder.com/300x200?text=" + encodeURIComponent(restaurant["Name"])}
+                              alt={restaurant["Name"]}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            
+                            <button
+                              onClick={(e) => toggleVisited(e, restaurant["Name"])}
+                              className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full shadow ${
+                                visited 
+                                  ? "bg-green-500 text-white" 
+                                  : "bg-white text-gray-500"
+                              } transition hover:scale-110`}
+                              title={visited ? "Visited" : "Mark as visited"}
+                            >
+                              {visited ? "✓" : "○"}
+                            </button>
+                            
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                              <div className="inline-block px-2 py-1 rounded bg-yellow-500 text-xs font-medium text-white mb-2">
+                                {restaurant["Cuisine / Type"]}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="p-4">
+                            <div className="flex justify-between items-start">
+                              <h2 className="text-lg font-bold text-gray-800 group-hover:text-orange-500 transition">
+                                {restaurant["Name"]}
+                              </h2>
+                              <div className="flex items-center text-yellow-500">
+                                <span className="mr-1">⭐</span>
+                                <span className="font-medium">{restaurant["Google Rating"]}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 bg-white rounded-lg shadow">
+                    <p className="text-xl text-gray-500">No restaurants found</p>
+                    {searchTerm && (
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition"
+                      >
+                        Clear Search
+                      </button>
+                    )}
+                  </div>
+                )}
+              </main>
+              
+              <footer className="mt-12 bg-gray-800 text-white py-6">
+                <div className="container mx-auto px-4 text-center text-sm">
+                  <p>© {new Date().getFullYear()} San Mateo Eats • Made with React & Tailwind</p>
+                </div>
+              </footer>
             </div>
           }
         />
