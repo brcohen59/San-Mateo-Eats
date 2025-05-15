@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/San-Mateo-Eats/static/css/main.2bb7472e.css",
-    "main.js": "/San-Mateo-Eats/static/js/main.042d6b2a.js",
-    "static/js/453.51b78c38.chunk.js": "/San-Mateo-Eats/static/js/453.51b78c38.chunk.js",
+    "main.css": "/San-Mateo-Eats/static/css/main.9bd5eeab.css",
+    "main.js": "/San-Mateo-Eats/static/js/main.31c5e81e.js",
+    "static/js/453.07a3a364.chunk.js": "/San-Mateo-Eats/static/js/453.07a3a364.chunk.js",
     "index.html": "/San-Mateo-Eats/index.html",
-    "main.2bb7472e.css.map": "/San-Mateo-Eats/static/css/main.2bb7472e.css.map",
-    "main.042d6b2a.js.map": "/San-Mateo-Eats/static/js/main.042d6b2a.js.map",
-    "453.51b78c38.chunk.js.map": "/San-Mateo-Eats/static/js/453.51b78c38.chunk.js.map"
+    "main.9bd5eeab.css.map": "/San-Mateo-Eats/static/css/main.9bd5eeab.css.map",
+    "main.31c5e81e.js.map": "/San-Mateo-Eats/static/js/main.31c5e81e.js.map",
+    "453.07a3a364.chunk.js.map": "/San-Mateo-Eats/static/js/453.07a3a364.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.2bb7472e.css",
-    "static/js/main.042d6b2a.js"
+    "static/css/main.9bd5eeab.css",
+    "static/js/main.31c5e81e.js"
   ]
 }
