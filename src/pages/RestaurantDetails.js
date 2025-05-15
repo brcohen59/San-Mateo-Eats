@@ -1,6 +1,7 @@
 // src/pages/RestaurantDetails.js
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { saveRestaurantData, getRestaurantData } from '../services/dataService';
 
 function RestaurantDetails({ restaurants }) {
   const { name } = useParams();
@@ -13,23 +14,31 @@ function RestaurantDetails({ restaurants }) {
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(decodedName));
-    if (saved) {
-      setVisited(saved.visited ?? false);
-      setMyRating(saved.myRating ?? "");
-      setLog(saved.log ?? "");
-    }
-    setHasLoaded(true);
+    const loadData = async () => {
+      const data = await getRestaurantData(decodedName);
+      if (data) {
+        setVisited(data.visited ?? false);
+        setMyRating(data.myRating ?? "");
+        setLog(data.log ?? "");
+      }
+      setHasLoaded(true);
+    };
+    
+    loadData();
   }, [decodedName]);
-
+  
   useEffect(() => {
     if (!hasLoaded) return;
-    const saveData = {
-      visited,
-      myRating,
-      log,
+    
+    const saveData = async () => {
+      await saveRestaurantData(decodedName, {
+        visited,
+        myRating,
+        log,
+      });
     };
-    localStorage.setItem(decodedName, JSON.stringify(saveData));
+    
+    saveData();
   }, [visited, myRating, log, decodedName, hasLoaded]);
 
   if (!restaurant) {

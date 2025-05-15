@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import Papa from "papaparse";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import RestaurantDetails from "./pages/RestaurantDetails"; // Adjust path if needed
+import { getAllRestaurantData, saveRestaurantData, getRestaurantData } from './services/dataService';
+import SyncPage from './pages/syncPage';
 
 function App() {
   const [restaurants, setRestaurants] = useState([]);
@@ -25,28 +27,43 @@ function App() {
 
   // Populate visited map from localStorage
   useEffect(() => {
-    const map = {};
-    restaurants.forEach((r) => {
-      const saved = JSON.parse(localStorage.getItem(r["Name"]));
-      if (saved && saved.visited) {
-        map[r["Name"]] = true;
-      }
-    });
-    setVisitedMap(map);
+    const loadAllData = async () => {
+      const allData = await getAllRestaurantData();
+      
+      const map = {};
+      restaurants.forEach((r) => {
+        const restaurantData = allData[r["Name"]];
+        if (restaurantData && restaurantData.visited) {
+          map[r["Name"]] = true;
+        }
+      });
+      
+      setVisitedMap(map);
+    };
+    
+    loadAllData();
   }, [restaurants]);
 
   const toggleVisited = (e, name) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const saved = JSON.parse(localStorage.getItem(name)) || {};
-    const newVisited = !saved.visited;
-    localStorage.setItem(name, JSON.stringify({ ...saved, visited: newVisited }));
-
-    setVisitedMap((prev) => ({
-      ...prev,
-      [name]: newVisited,
-    }));
+    // Update state immediately for UI responsiveness
+    setVisitedMap((prev) => {
+      const newVal = !prev[name];
+      const newMap = { ...prev, [name]: newVal };
+      
+      // Save the change to Firebase and localStorage
+      getRestaurantData(name).then(existingData => {
+        const data = existingData || {};
+        saveRestaurantData(name, {
+          ...data,
+          visited: newVal
+        });
+      });
+      
+      return newMap;
+    });
   };
 
   useEffect(() => {
@@ -101,6 +118,17 @@ function App() {
                   <h1 className="text-3xl font-bold">San Mateo Eats</h1>
                   <p className="text-gray-300 opacity-90">Discover and track local restaurants</p>
                 </div>
+
+                <Link 
+                  to="/sync" 
+                  className="text-white bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md flex items-center"
+                  title="Sync Devices"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                  </svg>
+                  <span className="ml-1">Sync</span>
+                </Link>
               </header>
 
               <main className="container mx-auto px-4 py-8">
@@ -256,6 +284,7 @@ function App() {
           }
         />
         <Route path="/restaurant/:name" element={<RestaurantDetails restaurants={restaurants} />} />
+        <Route path="/sync" element={<SyncPage />} />
       </Routes>
     </Router>
   );
