@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import RestaurantDetails from "./pages/RestaurantDetails"; // Adjust path if needed
 import { getAllRestaurantData, saveRestaurantData, getRestaurantData } from './services/dataService';
 import SyncPage from './pages/syncPage';
+import SkeletonCard from './components/SkeletonCard';
 
 function App() {
   const [restaurants, setRestaurants] = useState([]);
@@ -14,6 +15,7 @@ function App() {
   const [filter, setFilter] = useState("all"); // "all", "visited", "unvisited"
   const [visitedMap, setVisitedMap] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Papa.parse(`${process.env.PUBLIC_URL}/data/restaurants_with_images.csv`, {
@@ -25,20 +27,30 @@ function App() {
     });
   }, []);
 
-  // Populate visited map from localStorage
+  // Load visited data from Firebase
   useEffect(() => {
     const loadAllData = async () => {
-      const allData = await getAllRestaurantData();
+      if (restaurants.length === 0) return;
       
-      const map = {};
-      restaurants.forEach((r) => {
-        const restaurantData = allData[r["Name"]];
-        if (restaurantData && restaurantData.visited) {
-          map[r["Name"]] = true;
-        }
-      });
+      setLoading(true); // Start loading
       
-      setVisitedMap(map);
+      try {
+        const allData = await getAllRestaurantData();
+        
+        const map = {};
+        restaurants.forEach((r) => {
+          const restaurantData = allData[r["Name"]];
+          if (restaurantData && restaurantData.visited) {
+            map[r["Name"]] = true;
+          }
+        });
+        
+        setVisitedMap(map);
+      } catch (error) {
+        console.error("Error loading restaurant data:", error);
+      } finally {
+        setLoading(false); // End loading regardless of success/failure
+      }
     };
     
     loadAllData();
@@ -197,81 +209,90 @@ function App() {
                 </div>
 
                 {/* Restaurant Grid */}
-                {sortedRestaurants.length > 0 ? (
+                {loading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {sortedRestaurants.map((restaurant, index) => {
-                      const visited = visitedMap[restaurant["Name"]];
-                      
-                      return (
-                        <Link 
-                          to={`/restaurant/${encodeURIComponent(restaurant["Name"])}`}
-                          key={index}
-                          className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 transform hover:-translate-y-1"
-                        >
-                          {/* Restaurant Card */}
-                          <div className="relative h-48 overflow-hidden">
-                            <img
-                              src={restaurant["ImageURL"] || "https://via.placeholder.com/300x200?text=" + encodeURIComponent(restaurant["Name"])}
-                              alt={restaurant["Name"]}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                            
-                            <button
-                              onClick={(e) => toggleVisited(e, restaurant["Name"])}
-                              className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 hover:scale-110 ${
-                                visited 
-                                  ? "bg-green-500 text-white" 
-                                  : "bg-white text-gray-400 hover:text-gray-600 border border-gray-200"
-                              }`}
-                              title={visited ? "Visited" : "Mark as visited"}
-                            >
-                              {visited ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </button>
-                            
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                              <div className="inline-block px-2 py-1 rounded bg-gray-800 text-xs font-medium text-white mb-2">
-                                {restaurant["Cuisine / Type"]}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="p-4">
-                            <div className="flex justify-between items-start">
-                              <h2 className="text-lg font-bold text-gray-800 group-hover:text-orange-500 transition">
-                                {restaurant["Name"]}
-                              </h2>
-                              <div className="flex items-center text-amber-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                <span className="font-medium ml-1">{restaurant["Google Rating"]}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                    {/* Show 8 skeleton cards while loading */}
+                    {[...Array(8)].map((_, i) => (
+                      <SkeletonCard key={i} />
+                    ))}
                   </div>
                 ) : (
-                  <div className="text-center py-16 bg-white rounded-lg shadow">
-                    <p className="text-xl text-gray-500">No restaurants found</p>
-                    {searchTerm && (
-                      <button 
-                        onClick={() => setSearchTerm('')}
-                        className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition"
-                      >
-                        Clear Search
-                      </button>
-                    )}
-                  </div>
+                  sortedRestaurants.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {sortedRestaurants.map((restaurant, index) => {
+                        const visited = visitedMap[restaurant["Name"]];
+                        
+                        return (
+                          <Link 
+                            to={`/restaurant/${encodeURIComponent(restaurant["Name"])}`}
+                            key={index}
+                            className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 transform hover:-translate-y-1"
+                          >
+                            {/* Restaurant Card */}
+                            <div className="relative h-48 overflow-hidden">
+                              <img
+                                src={restaurant["ImageURL"] || "https://via.placeholder.com/300x200?text=" + encodeURIComponent(restaurant["Name"])}
+                                alt={restaurant["Name"]}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                              
+                              <button
+                                onClick={(e) => toggleVisited(e, restaurant["Name"])}
+                                className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 hover:scale-110 ${
+                                  visited 
+                                    ? "bg-green-500 text-white" 
+                                    : "bg-white text-gray-400 hover:text-gray-600 border border-gray-200"
+                                }`}
+                                title={visited ? "Visited" : "Mark as visited"}
+                              >
+                                {visited ? (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                ) : (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                              
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                                <div className="inline-block px-2 py-1 rounded bg-gray-800 text-xs font-medium text-white mb-2">
+                                  {restaurant["Cuisine / Type"]}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="p-4">
+                              <div className="flex justify-between items-start">
+                                <h2 className="text-lg font-bold text-gray-800 group-hover:text-orange-500 transition">
+                                  {restaurant["Name"]}
+                                </h2>
+                                <div className="flex items-center text-amber-600">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  <span className="font-medium ml-1">{restaurant["Google Rating"]}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16 bg-white rounded-lg shadow">
+                      <p className="text-xl text-gray-500">No restaurants found</p>
+                      {searchTerm && (
+                        <button 
+                          onClick={() => setSearchTerm('')}
+                          className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition"
+                        >
+                          Clear Search
+                        </button>
+                      )}
+                    </div>
+                  )
                 )}
               </main>
               
