@@ -18,7 +18,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Papa.parse(`${process.env.PUBLIC_URL}/data/restaurants_with_images.csv`, {
+    Papa.parse(`${process.env.PUBLIC_URL}/data/restaurants_with_hours.csv`, {
       header: true,
       download: true,
       complete: (results) => {

@@ -12,6 +12,7 @@ function RestaurantDetails({ restaurants }) {
   const [myRating, setMyRating] = useState("");
   const [log, setLog] = useState("");
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [hoursExpanded, setHoursExpanded] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -153,15 +154,17 @@ function RestaurantDetails({ restaurants }) {
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="md:flex">
-            <div className="md:w-1/2">
-              <img
-                src={restaurant["ImageURL"] || "https://via.placeholder.com/500x300?text=" + encodeURIComponent(restaurant["Name"])}
-                alt={restaurant["Name"]}
-                className="w-full h-64 md:h-full object-cover"
-              />
+            <div className="md:w-1/2 md:flex-shrink-0">
+              <div className="relative h-64 md:h-full">
+                <img
+                  src={restaurant["ImageURL"] || "https://via.placeholder.com/500x300?text=" + encodeURIComponent(restaurant["Name"])}
+                  alt={restaurant["Name"]}
+                  className="absolute w-full h-full object-cover"
+                />
+              </div>
             </div>
             
-            <div className="md:w-1/2 p-6">
+            <div className="md:w-1/2 p-6 md:min-h-[600px]">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <span className="inline-block px-3 py-1 bg-gray-800 text-white rounded-full text-sm font-medium">
@@ -243,7 +246,52 @@ function RestaurantDetails({ restaurants }) {
                   </div>
                 </div>
               </div>
-              
+
+              <div className="mb-6">
+                <button 
+                  onClick={() => setHoursExpanded(!hoursExpanded)}
+                  className="w-full flex items-center justify-between p-3 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+                >
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-medium text-gray-800">Business Hours</span>
+                  </div>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className={`h-5 w-5 text-gray-500 transform transition-transform ${hoursExpanded ? 'rotate-180' : ''}`} 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                  >
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                
+                <div className={`overflow-hidden transition-all duration-300 ${hoursExpanded ? 'max-h-96' : 'max-h-0'}`}>
+                  <div className="p-4 bg-white border border-gray-200 border-t-0 rounded-b-md">
+                    {restaurant["FormattedHours"] ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+                        {restaurant["FormattedHours"].split('|').map((day, index) => {
+                          const dayParts = day.trim().split(':');
+                          const dayName = dayParts[0];
+                          const hours = dayParts.slice(1).join(':').trim();
+                          
+                          return (
+                            <div key={index} className="flex items-center text-sm">
+                              <span className="font-medium text-gray-800 w-20">{dayName}</span>
+                              <span className="text-gray-600">{hours}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center">Hours not available</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+                            
               <div className="flex gap-3">
                 <a 
                   href={`https://www.google.com/maps/search/${encodeURIComponent(restaurant["Name"] + " San Mateo")}`}
